@@ -1,0 +1,21 @@
+{
+    "namespace": "udacity.class.final_project",
+    "name": "crime_service_call",
+    "type": "record",
+    "fields": [
+        {"name": "crime_id", "type": "int"},
+        {"name": "original_crime_type_name", "type": "string"},
+        {"name": "report_date", "type": "string"},
+        {"name": "call_date", "type": "string"},
+        {"name": "offense_date", "type": "string"},
+        {"name": "call_time", "type": "string"},
+        {"name": "call_date_time", "type": "string"},
+        {"name": "disposition", "type": "string"},
+        {"name": "address", "type": "string"},
+        {"name": "city", "type": "string"},
+        {"name": "state", "type": "string"},
+        {"name": "agency_id", "type": "int"},
+        {"name": "address_type", "type": "string"},
+        {"name": "common_location", "type": "string"}
+    ]
+}

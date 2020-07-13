@@ -1,0 +1,2 @@
+ijson
+confluent-kafka[avro]==1.4.0

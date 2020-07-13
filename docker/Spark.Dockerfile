@@ -73,4 +73,4 @@ RUN curl -sL --retry 3 \
 EXPOSE 8080
 EXPOSE 7077
 WORKDIR $SPARK_HOME
-CMD ["start-master"]
+CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]

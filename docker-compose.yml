@@ -19,7 +19,7 @@ services:
             ZOOKEEPER_CLIENT_PORT: "2181"
     # kafka server
     kafka0:
-        image: confluentinc/cp-kafka:5.2.2
+        image: confluentinc/cp-kafka:5.5.1
         ports:
         - "9092:9092"
         environment:
@@ -74,3 +74,11 @@ services:
             SCHEMAREGISTRY_URL: "http://schema-registry:8081/"
         depends_on:
         - "schema-registry"
+    producer:
+        build:
+            context: ./
+            dockerfile: ./docker/KafkaProducer.Dockerfile
+        image: victor755555/class-producer
+        volumes:
+            #- ./packages/:/usr/local/lib/python3.6/site-packages/
+            - ./:/app/
