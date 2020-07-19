@@ -1,30 +1,53 @@
-import faust
-import json
-import fastavro
+import argparse
 
-app = faust.App('Crime', broker='kafka://kafka0:9093')
+from confluent_kafka import DeserializingConsumer
+from confluent_kafka.schema_registry import SchemaRegistryClient
+from confluent_kafka.schema_registry.avro import AvroDeserializer
+from confluent_kafka.serialization import StringDeserializer
 
-avro_schema = ''
-with open('producer_server/police-department-calls-for-service-schema.json') as f:
-  avro_schema = json.load(f)
 
-def fast_avro_decode(schema, encoded_message):
-    stringio = io.BytesIO(encoded_message)
-    return fastavro.schemaless_reader(stringio, schema)
+def feed(args):
+    schema_str = args.avro_definition.read()
 
-topic = app.topic('crime_data', value_type=bytes)
+    schema_registry_conf = {'url': args.schema_registry}
+    schema_registry_client = SchemaRegistryClient(schema_registry_conf)
 
-def fast_avro_decode(schema, encoded_message):
-    stringio = io.BytesIO(encoded_message)
-    return fastavro.schemaless_reader(stringio, schema)
+    avro_serializer = AvroDeserializer(schema_str,
+                                       schema_registry_client)
 
-@app.agent(topic)
-async def crimes(records):
-    async for record in records:
-        schema = fastavro.parse_schema(avro_schema)
-        fast_avro_decode(schema, record) 
-        # process infinite stream of orders.
-        print(f'Crime {crime}')
+    consumer_conf = {'bootstrap.servers': args.bootstrap_servers,
+                     'key.deserializer': StringDeserializer(codec='utf_8'),
+                     'value.deserializer': avro_serializer,
+                     'group.id': 0,
+                     'auto.offset.reset': "earliest"}
+    
+    consumer = DeserializingConsumer(consumer_conf)
+    consumer.subscribe([args.topic])
 
-if __name__ == '__main__':
-    app.main()
+    while True:
+        try:
+            msg = consumer.poll(0.5)
+            if msg is None:
+                continue
+
+            crime = msg.value()
+            if crime is not None:
+                print(crime)
+        except KeyboardInterrupt:
+            break
+
+    consumer.close()
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Producer JSON")
+    parser.add_argument('-b', dest="bootstrap_servers", required=False, default="kafka0:9093",
+                        help="Bootstrap broker(s) (host[:port])")
+    parser.add_argument('-s', dest="schema_registry", required=False, default="http://schema-registry:8081",
+                        help="Schema Registry (http(s)://host[:port]")
+    parser.add_argument('-t', dest="topic", required=True,
+                        help="Topic name")
+    parser.add_argument('avro_definition', type=argparse.FileType('r'),
+                        help="Avro File Definition")
+    feed(parser.parse_args())

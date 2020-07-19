@@ -1,2 +1,1 @@
-faust==1.10.2 
-fastavro
+confluent-kafka[avro]==1.4.2
