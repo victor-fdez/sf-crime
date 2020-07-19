@@ -44,6 +44,7 @@ class ProducerServer(SerializingProducer):
     def generate_data(self, topic_name, input_file):
         int_fields = [a['name'] for a in ijson.items(self.schema_str,'fields.item') if a['type'] == 'int']
         for jvalue in ijson.items(input_file, 'item'):
+            self.poll(0)
             #message = self.dict_to_binary(obj)
             key = str(uuid4())
             jvalue = {k:(int(v) if k in int_fields else v) for k, v in jvalue.items()}
@@ -52,11 +53,9 @@ class ProducerServer(SerializingProducer):
             pp = pprint.PrettyPrinter(indent=4)
             pp.pprint(key)
             pp.pprint(jvalue)
-            #pp.pprint(self.len())
-            #self.poll(0.0)
+            # Send data to Kafka
             self.produce(topic_name, key=key, value=value, on_delivery=delivery_report)
             self.flush()
-            #self.send()
             time.sleep(1)
 
     # TODO fill this in to return the json dictionary to binary
