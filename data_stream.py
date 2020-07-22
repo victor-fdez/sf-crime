@@ -33,7 +33,7 @@ def run_spark_job(spark):
           .format("kafka")\
           .option("kafka.bootstrap.servers", "kafka0:9093")\
           .option("startingOffsets", "earliest")\
-          .option("maxOffsetsPerTrigger", 10)\
+          .option("maxOffsetsPerTrigger", 500)\
           .option("subscribe","crime")\
           .load()
 
@@ -41,11 +41,11 @@ def run_spark_job(spark):
     df.printSchema()
 
     # Take only value and convert it to String
-    kafka_df = df.selectExpr("CAST(value as STRING)")
+    kafka_df = df.selectExpr("timestamp","CAST(value as STRING)")
 
     service_table = kafka_df\
-        .select(psf.from_json(psf.col('value'), schema).alias("DF"))\
-        .select("DF.*")
+        .select(kafka_df.timestamp, psf.from_json(psf.col('value'), schema).alias("DF"))\
+        .select("timestamp","DF.*")
 
     service_table.createOrReplaceTempView("service_table")
 
@@ -53,42 +53,44 @@ def run_spark_job(spark):
     service_table.printSchema()
 
     # select original_crime_type_name and disposition
-    #distinct_table = service_table.take(2).print #service_table.map(lambda x: (x.original_crime_type_name, 1)).reduceByKey(add)
-    distinct_table = spark.sql("select original_crime_type_name, disposition from service_table")
-
-    #print(kafka_df.collect())
+    distinct_table = spark.sql("select timestamp, original_crime_type_name, disposition from service_table")
 
     # count the number of original crime type
-    print(type(service_table))
-    agg_df = service_table
+    #agg_df = distinct_table.withWatermark("timestamp", "10 seconds").groupBy("original_crime_type_name",psf.window("timestamp", "5 seconds")).count()
+    agg_df = distinct_table.withWatermark("timestamp", "10 seconds").groupBy("original_crime_type_name", "disposition").count()
     
-    #service_table.map(lambda x: (x.original_crime_type_name, 1)).reduceByKey(add)
-
     # Q1. Submit a screen shot of a batch ingestion of the aggregation
     # write output stream
-    query = service_table.writeStream \
-                  .outputMode("append")\
-                  .format("console")\
-                  .start()
+    # query = agg_df.writeStream \
+    #               .outputMode("complete")\
+    #               .format("console")\
+    #               .start()
 
     # attach a ProgressReporter
-    query.awaitTermination()
+    # query.awaitTermination()
 
-    # TODO get the right radio code json path
-    #radio_code_json_filepath = ""
-    #radio_code_df = spark.read.json(radio_code_json_filepath)
+    # get the right radio code json path
+    radio_code_json_filepath = "./radio_code.json"
+    radio_code_df = spark.read.json(radio_code_json_filepath, multiLine=True)
+
+    radio_code_df.printSchema()
 
     # clean up your data so that the column names match on radio_code_df and agg_df
     # we will want to join on the disposition code
 
-    # TODO rename disposition_code column to disposition
-    #radio_code_df = radio_code_df.withColumnRenamed("disposition_code", "disposition")
 
-    # TODO join on disposition column
-    #join_query = agg_df
+    # rename disposition_code column to disposition
+    radio_code_df = radio_code_df.withColumnRenamed("disposition_code", "disposition")
 
+    # join on disposition column
+    join_query = agg_df.join(radio_code_df, radio_code_df.disposition == agg_df.disposition, "inner")
 
-    join_query.awaitTermination()
+    query = join_query.writeStream \
+                    .outputMode("update")\
+                    .format("console")\
+                    .start()
+
+    query.awaitTermination()
 
 
 if __name__ == "__main__":

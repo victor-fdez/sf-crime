@@ -53,7 +53,7 @@ class ProducerServer(Producer):
             # Send data to Kafka
             self.produce(topic_name, key=key, value=value, on_delivery=delivery_report)
             self.flush()
-            time.sleep(1)
+            #time.sleep(0.1)
 
     # TODO fill this in to return the json dictionary to binary
     def dict_to_binary(self, json_dict):
