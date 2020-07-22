@@ -31,7 +31,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 
 # this installs packages mentioned in requirements-pip.txt
 ADD requirements.txt .
-RUN pip3 install --upgrade pip setuptools && \
+RUN pip3 install --upgrade pip setuptools pypandoc && \
     pip3 install -r requirements.txt
 
 # JAVA
@@ -42,20 +42,6 @@ RUN apt-get update \
 
 # HADOOP
 ENV HADOOP_VERSION 2.7 
-#ENV HADOOP_HOME /usr/hadoop-$HADOOP_VERSION
-#ENV HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
-#ENV PATH $PATH:$HADOOP_HOME/bin
-#RUN curl -sL --retry 3 \
-#  "http://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz" \
-#  | gunzip \
-#  | tar -x -C /usr/ \
-# && rm -rf $HADOOP_HOME/share/doc \
-# && chown -R root:root $HADOOP_HOME
-
-# SCALA
-ENV SCALA_VERSION 2.11.7
-RUN curl -sL --retry 3 -O "www.scala-lang.org/files/archive/scala-${SCALA_VERSION}.deb" \
-    && dpkg -i "scala-${SCALA_VERSION}.deb"
 
 # SPARK
 ENV SPARK_VERSION 2.4.3
@@ -70,7 +56,26 @@ RUN curl -sL --retry 3 \
  && mv /usr/$SPARK_PACKAGE/ $SPARK_HOME \
  && chown -R root:root $SPARK_HOME
 
+# SCALA
+ENV SCALA_VERSION_GLOBAL 2.11.7
+RUN curl -sL --retry 3 -O "www.scala-lang.org/files/archive/scala-${SCALA_VERSION_GLOBAL}.deb" \
+    && dpkg -i "scala-${SCALA_VERSION_GLOBAL}.deb"
+
+ENV SCALA_VERSION 2.11
+ENV KAFKA_VERSION 2.4.0
+ENV KAFKA_PACKAGE "kafka_${SCALA_VERSION}-${KAFKA_VERSION}"
+RUN curl -sL --retry 3 \
+    "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/${KAFKA_PACKAGE}.tgz" \
+    | gunzip \
+    | tar x -C /usr/ \
+   && cp -r /usr/${KAFKA_PACKAGE}/* $SPARK_HOME \
+   && chown -R root:root ${SPARK_HOME}
+
 EXPOSE 8080
 EXPOSE 7077
-WORKDIR $SPARK_HOME
+EXPOSE 3000
+
+#WORKDIR $SPARK_HOME
+WORKDIR /app/
+VOLUME [ "/app/" ]
 CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]

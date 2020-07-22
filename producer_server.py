@@ -2,9 +2,10 @@ import time
 from uuid import uuid4
 import pprint
 import pdb
+import json
 
 import ijson
-from confluent_kafka import SerializingProducer
+from confluent_kafka import Producer
 
 class obj(object):
     def __init__(self, d):
@@ -34,25 +35,21 @@ def delivery_report(err, msg):
     print('User record {} successfully produced to {} [{}] at offset {}'.format(
         msg.key(), msg.topic(), msg.partition(), msg.offset()))
 
-class ProducerServer(SerializingProducer):
+class ProducerServer(Producer):
 
     def __init__(self, kwargs):
-        self.schema_str = kwargs['schema']
-        del kwargs['schema']
         super().__init__(kwargs)
 
     def generate_data(self, topic_name, input_file):
-        int_fields = [a['name'] for a in ijson.items(self.schema_str,'fields.item') if a['type'] == 'int']
         for jvalue in ijson.items(input_file, 'item'):
             self.poll(0)
             #message = self.dict_to_binary(obj)
             key = str(uuid4())
-            jvalue = {k:(int(v) if k in int_fields else v) for k, v in jvalue.items()}
             #pdb.set_trace()
-            value = obj(jvalue)
+            value = json.dumps(jvalue)
             pp = pprint.PrettyPrinter(indent=4)
             pp.pprint(key)
-            pp.pprint(jvalue)
+            pp.pprint(value)
             # Send data to Kafka
             self.produce(topic_name, key=key, value=value, on_delivery=delivery_report)
             self.flush()

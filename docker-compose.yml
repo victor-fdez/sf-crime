@@ -5,12 +5,26 @@ services:
             context: ./
             dockerfile: ./docker/Spark.Dockerfile
         image: victor755555/class-spark-master
+        command: ["bash", "-c", "cd $${SPARK_HOME} && bin/spark-class org.apache.spark.deploy.master.Master"]
+        volumes: 
+            - ./:/app/
         ports:
+            - 3000:3000
             # WebUI
             - 8080:8080
             # Spark
             - 7077:7077
-    # zookeeper
+    spark-jupyter:
+        build:
+            context: ./
+            dockerfile: ./docker/Spark.Dockerfile
+        image: victor755555/class-spark-master
+        command: jupyter notebook --port=3000 --ip=0.0.0.0 --allow-root
+        ports:
+            # Jupyter
+            - 3000:3000
+        volumes: 
+            - ./:/app/
     zookeeper:
         image: confluentinc/cp-zookeeper:5.2.2
         ports:

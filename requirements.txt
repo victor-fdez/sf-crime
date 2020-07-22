@@ -1,5 +1,6 @@
 findspark
-pyspark
+pyspark==2.4.3
 python-dateutil
 pathlib
-confluent-kafka[avro]==1.4.3
+jupyter
+confluent-kafka[avro]==1.4.2

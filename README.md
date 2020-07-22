@@ -16,7 +16,9 @@ docker-compose run --rm producer python kafka_server.py -t crime_data -b kafka0:
 
 ### Start Consumer to download AVRO records
 
-
+```
+docker exec -ti e6ba01b87ade bash spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3 ./data_stream.py
+```
 
 ## Picture Submissiones
 
