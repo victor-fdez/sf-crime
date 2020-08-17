@@ -26,7 +26,6 @@ schema = StructType([
 
 def run_spark_job(spark):
 
-    # TODO Create Spark Configuration
     # Create Spark configurations with max offset of 200 per trigger
     # set up correct bootstrap server and port
     df = spark.readStream\
