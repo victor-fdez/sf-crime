@@ -26,7 +26,12 @@ docker-compose run --rm consumer python ./consumer_server.py -t crime
 # terminal 1 - start spark master - check localhost:8080
 docker-compose run --service-ports --rm spark
 # terminal 2 - start spark job in client mode - check localhost:4040
-docker exec -ti  $(docker-compose ps -q spark ) bash  spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3 --conf spark.executor.memory=1g --conf spark.executor.cores=1 --conf spark.driver.memory=1g --conf spark.driver.cores=1 ./data_stream.py
+docker exec -ti  $(docker-compose ps -q spark ) bash  \
+                 spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.3 \
+                 --conf spark.executor.memory=1g \
+                 --conf spark.executor.cores=1 \
+                 --conf spark.driver.memory=1g \
+                 --conf spark.driver.cores=1 ./data_stream.py
 ```
 
 ## Picture Submissiones
