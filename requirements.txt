@@ -1,5 +1,5 @@
 findspark
-pyspark==2.4.3
+pyspark==3.2.2
 python-dateutil
 pathlib
 jupyter
